@@ -1,17 +1,30 @@
-import unittest
-import index
-
-
-class TestHandlerCase(unittest.TestCase):
-
-    def test_response(self):
-        print("testing response.")
-        result = index.handler(None, None)
-        print(result)
-        self.assertEqual(result['statusCode'], 200)
-        self.assertEqual(result['headers']['Content-Type'], 'application/json')
-        self.assertIn('Hello World', result['body'])
-
-
-if __name__ == '__main__':
-    unittest.main()
+{
+  "StartAt": "CheckPath",
+  "States": {
+    "CheckPath": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.detail.path",
+          "StringContains": "devl1",
+          "Next": "SendToSQS"
+        }
+      ],
+      "Default": "NoDevl1Found"
+    },
+    "SendToSQS": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sqs:sendMessage",
+      "Parameters": {
+        "QueueUrl": "https://sqs.REGION.amazonaws.com/ACCOUNT_ID/MyQueue",
+        "MessageBody.$": "$"
+      },
+      "End": true
+    },
+    "NoDevl1Found": {
+      "Type": "Fail",
+      "Error": "PathError",
+      "Cause": "The path does not contain devl1"
+    }
+  }
+}
